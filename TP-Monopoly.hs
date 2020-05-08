@@ -18,24 +18,6 @@ data Persona = Persona {
 
 ------
 
-barata = Propiedad {
-	nombrePropiedad = "propi",
-	precio = 100
-}
-
-cara = Propiedad {
-	nombrePropiedad = "propi",
-	precio = 500
-}
-
-pepe = Persona {
-	nombre = "Carolina",
-	cantDinero = 500,
-	tactica = "Accionista",
-	propiedades = [barata,cara,cara,barata,barata,barata],
-	acciones = [pasarPorElBanco]--,pagarAAccionistas]
-}
-
 carolina = Persona {
 	nombre = "Carolina",
 	cantDinero = 500,
@@ -54,9 +36,6 @@ manuel = Persona {
 
 ------
 
--- subastar: al momento de una subasta solo quienes tengan como tácticas “Oferente singular” o “Accionista” podrán ganar la propiedad.
--- Ganar implica restar el precio de la propiedad de su dinero y sumar la nueva adquisición a sus propiedades. 
-
 pasarPorElBanco :: Accion
 pasarPorElBanco persona = Persona (nombre persona) (cantDinero persona+40) "Comprador compulsivo" (propiedades persona) (acciones persona)
 
@@ -72,8 +51,13 @@ enojarse persona = Persona (nombre persona) (cantDinero persona+50) (tactica per
 
 ------
 
-subastar :: Accion
-subastar persona = 
+tieneLaTactica :: Persona -> Bool
+tieneLaTactica persona = tactica persona == "Oferente singular" || tactica persona == "Accionista" 
+
+subastar :: Propiedad -> Accion
+subastar propiedad persona
+  | (tieneLaTactica persona == True) = Persona (nombre persona) (cantDinero persona - precio propiedad) (tactica persona) (propiedades persona ++ [propiedad]) (acciones persona)
+  | otherwise = persona
 
 ------
 
@@ -98,5 +82,6 @@ esAccionista :: Persona -> Bool
 esAccionista persona = tactica persona == "Accionista"
 
 pagarAAccionistas :: Accion
-pagarAAccionistas persona | (esAccionista persona == True) = UnaPersona (nombre persona) (cantidadDeDinero persona + 200) (tactica persona) (propiedadesCompradas persona) (acciones persona)
-                          | otherwise = UnaPersona (nombre persona) (cantidadDeDinero persona - 100) (tactica persona) (propiedadesCompradas persona) (acciones persona)
+pagarAAccionistas persona
+  | (esAccionista persona == True) = Persona (nombre persona) (cantDinero persona + 200) (tactica persona) (propiedades persona) (acciones persona)
+  | otherwise = Persona (nombre persona) (cantDinero persona - 100) (tactica persona) (propiedades persona) (acciones persona)
