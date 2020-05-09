@@ -4,50 +4,50 @@ import Text.Show.Functions
 type Accion = (Persona -> Persona)
 
 data Propiedad = Propiedad {
-	nombrePropiedad :: String,
-	precio :: Int
+  nombrePropiedad :: String,
+  precio :: Int
 } deriving (Show)
 
 data Persona = Persona {
-	nombre :: String,
-	cantDinero :: Int,
-	tactica :: String,
-	propiedades :: [Propiedad],
-	acciones :: [Accion]
+  nombre :: String,
+  cantDinero :: Int,
+  tactica :: String,
+  propiedades :: [Propiedad],
+  acciones :: [Accion]
 } deriving (Show)
 
 ------
 
 carolina = Persona {
-	nombre = "Carolina",
-	cantDinero = 500,
-	tactica = "Accionista",
-	propiedades = [],
-	acciones = [pasarPorElBanco]--,pagarAAccionistas]
+  nombre = "Carolina",
+  cantDinero = 500,
+  tactica = "Accionista",
+  propiedades = [],
+  acciones = [pasarPorElBanco, pagarAAccionistas]
 }
 
 manuel = Persona {
-	nombre = "Manuel",
-	cantDinero = 500,
-	tactica = "Oferente singular",
-	propiedades = [],
-	acciones = [pasarPorElBanco, enojarse]
+  nombre = "Manuel",
+  cantDinero = 500,
+  tactica = "Oferente singular",
+  propiedades = [],
+  acciones = [pasarPorElBanco, enojarse]
 }
 
 ------
 
 pasarPorElBanco :: Accion
-pasarPorElBanco persona = Persona (nombre persona) (cantDinero persona+40) "Comprador compulsivo" (propiedades persona) (acciones persona)
+pasarPorElBanco persona = persona {cantDinero = cantDinero persona+40, tactica = "Comprador compulsivo"}
 
 ------
 
 gritar :: Accion
-gritar persona = Persona ("AHHHH"++(nombre persona)) (cantDinero persona) (tactica persona) (propiedades persona) (acciones persona)
+gritar persona = persona {nombre = "AHHHH"++(nombre persona)}
 
 ------
 
 enojarse :: Accion
-enojarse persona = Persona (nombre persona) (cantDinero persona+50) (tactica persona) (propiedades persona) ((acciones persona)++[gritar])
+enojarse persona = persona {cantDinero = cantDinero persona+50, acciones = acciones persona++[gritar]}
 
 ------
 
@@ -56,7 +56,7 @@ tieneLaTactica persona = tactica persona == "Oferente singular" || tactica perso
 
 subastar :: Propiedad -> Accion
 subastar propiedad persona
-  | (tieneLaTactica persona == True) = Persona (nombre persona) (cantDinero persona - precio propiedad) (tactica persona) (propiedades persona ++ [propiedad]) (acciones persona)
+  | tieneLaTactica persona = persona {cantDinero = cantDinero persona - precio propiedad, propiedades = propiedades persona ++ [propiedad]}
   | otherwise = persona
 
 ------
@@ -74,7 +74,7 @@ cantTotalDinero :: Persona -> Int
 cantTotalDinero persona = (cantDinero persona) + (sumarPorPropiedad persona)
 
 cobrarAlquileres :: Accion
-cobrarAlquileres persona = Persona (nombre persona) (cantDinero persona+50) (tactica persona) (propiedades persona) (acciones persona)
+cobrarAlquileres persona = persona {cantDinero = cantDinero persona+50}
 
 ------
 
@@ -83,5 +83,5 @@ esAccionista persona = tactica persona == "Accionista"
 
 pagarAAccionistas :: Accion
 pagarAAccionistas persona
-  | (esAccionista persona == True) = Persona (nombre persona) (cantDinero persona + 200) (tactica persona) (propiedades persona) (acciones persona)
-  | otherwise = Persona (nombre persona) (cantDinero persona - 100) (tactica persona) (propiedades persona) (acciones persona)
+  | (esAccionista persona == True) = persona {cantDinero = cantDinero persona + 200}
+  | otherwise = persona {cantDinero = cantDinero persona - 100}
