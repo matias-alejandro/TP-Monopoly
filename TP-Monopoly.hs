@@ -33,11 +33,25 @@ manuel = Persona {
   propiedades = [],
   acciones = [pasarPorElBanco, enojarse]
 }
+------
+
+alterarDinero :: Int -> Persona -> Persona
+alterarDinero cantidad persona = persona {cantDinero = (+) cantidad (cantDinero persona) }
+
+------
+
+agregarAccion :: Persona -> Accion -> Persona
+agregarAccion persona accion = persona {acciones = accion:acciones persona}
+
+------
+
+agregarPropiedad :: Persona -> Propiedad -> Persona
+agregarPropiedad persona propiedad = persona {propiedades = propiedad:propiedades persona}
 
 ------
 
 pasarPorElBanco :: Accion
-pasarPorElBanco persona = persona {cantDinero = cantDinero persona+40, tactica = "Comprador compulsivo"}
+pasarPorElBanco persona = alterarDinero 40 persona {tactica = "Comprador compulsivo"}
 
 ------
 
@@ -47,16 +61,19 @@ gritar persona = persona {nombre = "AHHHH"++(nombre persona)}
 ------
 
 enojarse :: Accion
-enojarse persona = persona {cantDinero = cantDinero persona+50, acciones = acciones persona++[gritar]}
+enojarse persona = alterarDinero 50 $ agregarAccion persona gritar
 
 ------
+
+comprarPropiedad :: Propiedad -> Persona -> Persona
+comprarPropiedad propiedad persona = alterarDinero (-precio propiedad) $ agregarPropiedad persona propiedad
 
 tieneLaTactica :: Persona -> Bool
 tieneLaTactica persona = tactica persona == "Oferente singular" || tactica persona == "Accionista" 
 
 subastar :: Propiedad -> Accion
 subastar propiedad persona
-  | tieneLaTactica persona = persona {cantDinero = cantDinero persona - precio propiedad, propiedades = propiedades persona ++ [propiedad]}
+  | tieneLaTactica persona = comprarPropiedad propiedad persona
   | otherwise = persona
 
 ------
@@ -64,17 +81,19 @@ subastar propiedad persona
 esPropiedadBarata :: Propiedad -> Bool
 esPropiedadBarata propiedad = (>) 150 (precio propiedad)
 
-cantPropiedadesSegun :: Persona -> (Propiedad -> Bool) -> Int
-cantPropiedadesSegun persona condicion = length.filter (==True) $ map condicion (propiedades persona)
+valorDePropiedad :: Propiedad -> Int
+valorDePropiedad propiedad
+  | esPropiedadBarata propiedad = 10
+  | otherwise = 20
 
-sumarPorPropiedad :: Persona -> Int
-sumarPorPropiedad persona = 10 * (cantPropiedadesSegun persona esPropiedadBarata) + 20 * (cantPropiedadesSegun persona (not.esPropiedadBarata))
+gananciaPorPropiedad :: [Propiedad] -> [Int]
+gananciaPorPropiedad = map valorDePropiedad
 
-cantTotalDinero :: Persona -> Int
-cantTotalDinero persona = (cantDinero persona) + (sumarPorPropiedad persona)
+gananciaTotal :: Persona -> Int
+gananciaTotal persona = sum $ gananciaPorPropiedad $ propiedades persona
 
 cobrarAlquileres :: Accion
-cobrarAlquileres persona = persona {cantDinero = cantDinero persona+50}
+cobrarAlquileres persona = alterarDinero (gananciaTotal persona) persona
 
 ------
 
@@ -83,5 +102,27 @@ esAccionista persona = tactica persona == "Accionista"
 
 pagarAAccionistas :: Accion
 pagarAAccionistas persona
-  | (esAccionista persona == True) = persona {cantDinero = cantDinero persona + 200}
-  | otherwise = persona {cantDinero = cantDinero persona - 100}
+  | esAccionista persona = alterarDinero 200 persona
+  | otherwise = alterarDinero (-100) persona
+
+------
+
+hacerBerrinchePor :: Propiedad -> Accion
+hacerBerrinchePor propiedad persona
+  | cantDinero persona < precio propiedad = hacerBerrinchePor propiedad $ alterarDinero 10 $ gritar persona 
+  | otherwise = comprarPropiedad propiedad persona
+
+------
+
+ultimaRonda :: Persona -> Accion
+ultimaRonda persona = foldl (.) (head $ acciones persona) (tail $ acciones persona)
+
+------
+
+dineroAlAplicarSusAcciones :: Persona -> Int
+dineroAlAplicarSusAcciones persona = cantDinero $ ultimaRonda persona persona
+
+juegoFinal :: Persona -> Persona -> Persona
+juegoFinal persona1 persona2
+  | dineroAlAplicarSusAcciones persona1 > dineroAlAplicarSusAcciones persona2 = persona1
+  | otherwise = persona2
